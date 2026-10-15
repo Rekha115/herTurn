@@ -109,24 +109,12 @@ app = FastAPI(
 
 def get_allowed_cors_origins() -> list[str]:
     """
-    Computes allowed CORS origins based on ENVIRONMENT and ALLOWED_ORIGINS.
-    - In production: strictly uses origins explicitly configured in ALLOWED_ORIGINS.
-    - In development/testing: includes localhost defaults plus any configured in ALLOWED_ORIGINS.
+    Computes allowed CORS origins based on ALLOWED_ORIGINS and environment defaults.
+    Ensures trailing slashes are stripped and standard localhost origins are always included.
     """
-    environment = (os.getenv("ENVIRONMENT") or "development").strip().lower()
     raw_allowed = os.getenv("ALLOWED_ORIGINS", "")
-    explicit_origins = [o.strip() for o in raw_allowed.split(",") if o.strip()]
+    explicit_origins = [o.strip().rstrip("/") for o in raw_allowed.split(",") if o.strip()]
 
-    if environment == "production":
-        if not explicit_origins:
-            logger.warning(
-                "CRITICAL: ENVIRONMENT=production but ALLOWED_ORIGINS is empty. "
-                "CORS will block external cross-origin browser requests."
-            )
-            return []
-        return explicit_origins
-
-    # Development & test defaults
     dev_origins = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
@@ -144,6 +132,7 @@ ALLOWED_CORS_ORIGINS = get_allowed_cors_origins()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_CORS_ORIGINS,
+    allow_origin_regex=r"https://.*\.(vercel\.app|netlify\.app|onrender\.com|railway\.app|github\.io)",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

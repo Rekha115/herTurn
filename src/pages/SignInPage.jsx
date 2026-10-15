@@ -103,7 +103,11 @@ export default function SignInPage() {
         }, 500);
       }
     } catch (err) {
-      setApiError(err.message || 'Authentication request failed. Please check your credentials.');
+      let msg = err.message || 'Authentication request failed. Please check your credentials.';
+      if (msg.toLowerCase().includes('failed to fetch')) {
+        msg = 'Unable to connect to the backend server. If using Render free tier, the service spins down after 15 minutes of inactivity and takes ~45 seconds to wake up. Please wait a moment and try again, or verify your VITE_API_BASE_URL setting.';
+      }
+      setApiError(msg);
     } finally {
       setIsSubmitting(false);
     }
