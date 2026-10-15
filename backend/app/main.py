@@ -83,12 +83,19 @@ logger = logging.getLogger("herturn.main")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
-    Lifespan context manager: ensures database tables exist on startup.
+    Lifespan context manager: ensures database tables exist on startup
+    and knowledge base is ingested if needed.
     """
     try:
         init_db()
     except Exception as e:
         logger.warning(f"Database initialization warning on startup: {e}")
+
+    try:
+        from app.rag.ingestion import ingest_resources
+        ingest_resources()
+    except Exception as e:
+        logger.warning(f"Knowledge base auto-ingestion warning on startup: {e}")
     yield
 
 
